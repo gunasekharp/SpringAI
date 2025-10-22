@@ -1,0 +1,22 @@
+version: '3.9'
+services:
+  mcp-server:
+    image: node:20
+    working_dir: /app
+    volumes:
+      - ./mcp:/app/mcp
+    command: >
+      npx -y @modelcontextprotocol/server-filesystem /app/mcp
+    stdin_open: true
+    tty: true
+
+  mcp-client:
+    build: ./mcpclient  # your Spring Boot app Dockerfile
+    environment:
+      SPRING_AI_MCP_CLIENTS_0_ID: filesystem
+      SPRING_AI_MCP_CLIENTS_0_TRANSPORT_STDIO_COMMAND: "npx"
+      SPRING_AI_MCP_CLIENTS_0_TRANSPORT_STDIO_ARGS_0: "-y"
+      SPRING_AI_MCP_CLIENTS_0_TRANSPORT_STDIO_ARGS_1: "@modelcontextprotocol/server-filesystem"
+      SPRING_AI_MCP_CLIENTS_0_TRANSPORT_STDIO_ARGS_2: "/app/mcp"
+    depends_on:
+      - mcp-server

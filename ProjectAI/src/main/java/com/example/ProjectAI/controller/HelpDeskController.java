@@ -1,0 +1,41 @@
+package com.example.ProjectAI.controller;
+
+import com.example.ProjectAI.Tools.HelpDeskTool;
+import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.Resource;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.Map;
+
+import static org.springframework.ai.chat.memory.ChatMemory.CONVERSATION_ID;
+
+@RestController
+@RequestMapping("/api/tools")
+public class HelpDeskController {
+
+    private final ChatClient chatClient;
+    private final HelpDeskTool helpDeskTool;
+
+    public HelpDeskController(@Qualifier("chatMemoryClient") ChatClient chatClient, HelpDeskTool helpDeskTool) {
+        this.chatClient = chatClient;
+        this.helpDeskTool = helpDeskTool;
+    }
+    @Value("classpath:/templates/helpDeskPromptTemplate.st")
+    Resource helpDeskSystem;
+
+    @GetMapping("/help-desk")
+    public ResponseEntity<String> helpDesk(@RequestHeader("username") String username,
+                                           @RequestParam("message") String message){
+        String ans= chatClient.prompt()
+                .advisors(a->a.param(CONVERSATION_ID, username))
+                .system(helpDeskSystem)
+                .tools(helpDeskTool)
+                .user(message)
+                .toolContext(Map.of("username",username))
+                .call().content();
+        return ResponseEntity.ok(ans);
+    }
+}
